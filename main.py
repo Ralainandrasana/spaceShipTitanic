@@ -20,7 +20,16 @@ dataTestOrig = pd.read_csv("test.csv")
 # 2. FEATURE ENGINEERING (aucune statistique apprise ici)
 # ============================================================
 def add_features(data):
-    data = data.drop(["PassengerId", "Name"], axis=1)
+    data["numGrp"] = data["PassengerId"].str.split("_").str[0]
+    data["grpSize"] = data.groupby("numGrp")["PassengerId"].transform("count")
+
+    data["isalone"] = (data["grpSize"] == 1).astype(int)
+
+    data["grpType"] = "large group"
+    data.loc[data["grpSize"] == 1, "grpType"] = "alone"
+    data.loc[data["grpSize"] == 2, "grpType"] = "duo"
+    data.loc[data["grpSize"] == 3, "grpType"] = "trio"
+    data = data.drop(["PassengerId", "Name", "numGrp"], axis=1)
 
     data["Cabin_deck"] = data["Cabin"].str.split("/").str[0]
     data["Cabin_side"] = data["Cabin"].str.split("/").str[2]
@@ -53,8 +62,8 @@ colsNum = [
     "VRDeck",
     "TotalSpent",
 ]
-colsCat = ["HomePlanet", "Destination", "Cabin_deck", "Cabin_side"]
-colsBin = ["CryoSleep", "VIP", "HasCabin", "NoSpending"]
+colsCat = ["HomePlanet", "Destination", "Cabin_deck", "Cabin_side", "grpSize"]
+colsBin = ["CryoSleep", "VIP", "HasCabin", "NoSpending", "isalone"]
 
 X = df.drop("Transported", axis=1)
 y = df["Transported"].astype(int)
